@@ -7,6 +7,7 @@ import json
 
 from agents.agent_lease import analyze_lease
 from agents.agent_dependency import analyze_dependencies
+from agents.agent_migration import build_migration_plan
 
 
 app = Flask(__name__)
@@ -74,16 +75,18 @@ def lease_route():
     return jsonify(results)
 
 
-@app.route('/analyze/dependencies', methods=['POST'])
-def analyze_dependencies():
-    # Placeholder for Dependency Analyzer (Agent B)
-    return jsonify({"result": "Dependency analysis complete (stub)"})
+@app.route('/analyze/dependencies', methods=['GET'])
+def dependency_route():
+    result = analyze_dependencies()
+    return jsonify(result)
 
 
-@app.route('/generate-plan', methods=['POST'])
-def generate_plan():
-    # Placeholder for Migration Planner (Agent C)
-    return jsonify({"result": "Migration plan created (stub)"})
+
+@app.route('/generate-plan', methods=['GET'])
+def generate_plan_route():
+    result = build_migration_plan()
+    return jsonify(result)
+
 
 
 if __name__ == '__main__':

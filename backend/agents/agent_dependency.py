@@ -51,4 +51,3 @@ def analyze_dependencies():
     }
 
     return summary
-
