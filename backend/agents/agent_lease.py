@@ -1,10 +1,11 @@
-# backend/agents/agent_lease.py
-
 import os
 import fitz  # PyMuPDF
 import json
+import requests
+from config import AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AGENT_LEASE_ID
 
-APP_FILES_DIR = "../app_files"  # Relative path from backend
+# Correct path to app_files
+APP_FILES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app_files"))
 
 def extract_text_from_pdf(file_path):
     text = ""
@@ -17,22 +18,52 @@ def extract_text_from_pdf(file_path):
 def analyze_lease():
     lease_data = []
 
+    # Ensure the app_files directory exists
+    if not os.path.exists(APP_FILES_DIR):
+        return {"error": f"Lease folder not found at {APP_FILES_DIR}"}
+
     for filename in os.listdir(APP_FILES_DIR):
         if filename.lower().endswith(".pdf"):
             file_path = os.path.join(APP_FILES_DIR, filename)
             raw_text = extract_text_from_pdf(file_path)
 
-            # Simulated output (we'll replace with real Azure output later)
-            lease_summary = {
-                "filename": filename,
-                "monthly_rent": "Unknown (placeholder)",
-                "lease_term": "Unknown (placeholder)",
-                "estimated_roi": "Unknown (placeholder)",
-                "risks": ["Risk info not extracted yet"],
-                "text_preview": raw_text[:300] + "..."  # Show first 300 chars
-            }
+            # Send extracted text to Azure Agent
+            try:
+                headers = {
+                    "Content-Type": "application/json",
+                    "api-key": AZURE_OPENAI_API_KEY
+                }
+                payload = {
+                    "inputs": [
+                        {
+                            "input": raw_text
+                        }
+                    ]
+                }
+                url = f"{AZURE_OPENAI_ENDPOINT}/openai/assistants/{AGENT_LEASE_ID}/invoke"
+                response = requests.post(url, headers=headers, json=payload)
+
+                if response.status_code == 200:
+                    result = response.json()
+                    lease_summary = {
+                        "filename": filename,
+                        "summary": result,
+                        "text_preview": raw_text[:300] + "..."
+                    }
+                else:
+                    lease_summary = {
+                        "filename": filename,
+                        "error": f"Agent error: {response.status_code}",
+                        "text_preview": raw_text[:300] + "..."
+                    }
+
+            except Exception as e:
+                lease_summary = {
+                    "filename": filename,
+                    "error": str(e),
+                    "text_preview": raw_text[:300] + "..."
+                }
 
             lease_data.append(lease_summary)
 
     return lease_data
-

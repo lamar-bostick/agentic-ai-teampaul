@@ -1,13 +1,11 @@
-# backend/agents/agent_dependency.py
-
 import os
 import json
 import networkx as nx
-
-APP_FILES_DIR = "../app_files"
+import requests
+from config import AGENT_DEPENDENCY_ID, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, OUTPUT_FOLDER
 
 def load_json(filename):
-    path = os.path.join(APP_FILES_DIR, filename)
+    path = os.path.join(OUTPUT_FOLDER, filename)
     if os.path.exists(path):
         with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -22,7 +20,11 @@ def build_dependency_graph():
     G = nx.DiGraph()
 
     for app in applications:
-        G.add_node(app["application_id"], label=app["application_name"], type="application")
+        app_id = app.get("application_id")
+        app_name = app.get("application_name", "Unnamed App")
+        if app_id:
+            G.add_node(app_id, label=app_name, type="application")
+
 
     for dep in dependencies:
         G.add_edge(dep["source_application_id"], dep["target_application_id"], type="app_dep")
@@ -50,4 +52,34 @@ def analyze_dependencies():
         "dependencies": list(G.edges())
     }
 
-    return summary
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "api-key": AZURE_OPENAI_API_KEY
+        }
+        payload = {
+            "inputs": [
+                {
+                    "input": json.dumps(summary)
+                }
+            ]
+        }
+        url = f"{AZURE_OPENAI_ENDPOINT}/openai/assistants/{AGENT_DEPENDENCY_ID}/invoke"
+        response = requests.post(url, headers=headers, json=payload)
+
+        if response.status_code == 200:
+            return {
+                "agent_response": response.json(),
+                "graph_summary": summary
+            }
+        else:
+            return {
+                "error": f"Agent error: {response.status_code}",
+                "graph_summary": summary
+            }
+
+    except Exception as e:
+        return {
+            "error": str(e),
+            "graph_summary": summary
+        }

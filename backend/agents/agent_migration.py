@@ -1,5 +1,8 @@
 import json
+import os
 from datetime import datetime
+import requests
+from config import AGENT_MIGRATION_ID, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, OUTPUT_FOLDER
 
 def rank_applications_by_roi_and_urgency(lease_data, dependency_data):
     ranked_apps = []
@@ -17,14 +20,17 @@ def rank_applications_by_roi_and_urgency(lease_data, dependency_data):
     return [app for app, score in ranked_apps]
 
 def build_migration_plan():
+    lease_data_path = os.path.join(OUTPUT_FOLDER, "lease_analysis.json")
+    dependency_data_path = os.path.join(OUTPUT_FOLDER, "dependency_analysis.json")
+
     try:
-        with open("app_files/lease_analysis.json") as f:
+        with open(lease_data_path) as f:
             lease_data = json.load(f)
     except:
         lease_data = []
 
     try:
-        with open("app_files/dependency_analysis.json") as f:
+        with open(dependency_data_path) as f:
             dependency_data = json.load(f)
     except:
         dependency_data = {}
@@ -41,9 +47,40 @@ def build_migration_plan():
         for i in range(3)
     ]
 
-    return {
+    plan = {
         "total_apps": total_apps,
         "migration_strategy": "ROI and risk weighted 3-phase migration",
         "waves": waves
     }
 
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "api-key": AZURE_OPENAI_API_KEY
+        }
+        payload = {
+            "inputs": [
+                {
+                    "input": json.dumps(plan)
+                }
+            ]
+        }
+        url = f"{AZURE_OPENAI_ENDPOINT}/openai/assistants/{AGENT_MIGRATION_ID}/invoke"
+        response = requests.post(url, headers=headers, json=payload)
+
+        if response.status_code == 200:
+            return {
+                "agent_response": response.json(),
+                "plan": plan
+            }
+        else:
+            return {
+                "error": f"Agent error: {response.status_code}",
+                "plan": plan
+            }
+
+    except Exception as e:
+        return {
+            "error": str(e),
+            "plan": plan
+        }

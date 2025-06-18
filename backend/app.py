@@ -9,6 +9,17 @@ from agents.agent_lease import analyze_lease
 from agents.agent_dependency import analyze_dependencies
 from agents.agent_migration import build_migration_plan
 
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# Access environment variables
+azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
+agent_lease_id = os.getenv("AGENT_LEASE_ID")
+agent_dependency_id = os.getenv("AGENT_DEPENDENCY_ID")
+agent_migration_id = os.getenv("AGENT_MIGRATION_ID")
 
 app = Flask(__name__)
 CORS(app)
