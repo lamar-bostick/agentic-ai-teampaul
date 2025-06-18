@@ -6,6 +6,8 @@ import csv
 import json
 
 from agents.agent_lease import analyze_lease
+from agents.agent_dependency import analyze_dependencies
+
 
 app = Flask(__name__)
 CORS(app)
