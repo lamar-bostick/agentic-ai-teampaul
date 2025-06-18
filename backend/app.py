@@ -1,26 +1,41 @@
-from flask import Flask, request, jsonify
-from agents.agent_lease import analyze_lease
-from agents.agent_dependency import analyze_dependencies
-from agents.agent_migration import generate_plan
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from utils import extract_and_convert_zip
+from agents import run_agent_task
+from utils import list_app_files
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route('/upload', methods=['POST'])
-def upload_data():
-    # Handle file upload here
-    return jsonify({"status": "received"})
+# Enable CORS so frontend can connect
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, restrict to your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route('/analyze/lease', methods=['POST'])
-def analyze_lease_data():
-    return analyze_lease(request.files)
+@app.post("/upload")
+async def upload_zip(file: UploadFile = File(...)):
+    """
+    Accepts a ZIP file, extracts contents,
+    converts CSVs to JSON and PDFs to text,
+    and stores the output in app_files/.
+    """
+    result = await extract_and_convert_zip(file)
+    return result
 
-@app.route('/analyze/dependencies', methods=['POST'])
-def analyze_dependency_data():
-    return analyze_dependencies(request.files)
+@app.post("/task")
+async def run_task(task: str = Form(...)):
+    """
+    Handles task input from the frontend (prompt or button).
+    Dispatches to correct agent and returns output.
+    """
+    output = run_agent_task(task)
+    return {"output": output}
 
-@app.route('/generate-plan', methods=['POST'])
-def generate_migration_plan():
-    return generate_plan(request.json)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+
+@app.get("/files")
+def get_converted_files():
+    return {"files": list_app_files()}
