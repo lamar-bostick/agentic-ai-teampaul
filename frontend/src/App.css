@@ -1,0 +1,11 @@
+/* frontend/src/App.css */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f9fafb;
+  color: #333;
+}
+
+input[type="file"] {
+  margin: 0 auto;
+  display: block;
+}
