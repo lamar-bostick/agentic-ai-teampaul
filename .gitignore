@@ -1,0 +1,12 @@
+# Ignore environment secrets
+.env
+
+# Ignore node_modules (used by frontend)
+node_modules/
+
+# Ignore uploaded or generated files
+uploads/
+app_files/
+
+# Ignore Python cache files
+__pycache__/
