@@ -4,8 +4,14 @@ import axios from "axios";
 function App() {
   const [zipFile, setZipFile] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
+
+  const [leasePrompt, setLeasePrompt] = useState("");
   const [leaseResult, setLeaseResult] = useState(null);
+
+  const [dependencyPrompt, setDependencyPrompt] = useState("");
   const [dependencyResult, setDependencyResult] = useState(null);
+
+  const [migrationPrompt, setMigrationPrompt] = useState("");
   const [planResult, setPlanResult] = useState(null);
 
   const handleFileChange = (e) => {
@@ -35,19 +41,22 @@ function App() {
   };
 
   const handleLeaseClick = () => {
-    axios.get("http://localhost:5000/analyze/lease")
+    axios
+      .post("http://localhost:5000/analyze/lease", { prompt: leasePrompt })
       .then((response) => setLeaseResult(response.data))
       .catch((error) => console.error("Lease Analysis Error:", error));
   };
 
   const handleDependencyClick = () => {
-    axios.get("http://localhost:5000/analyze/dependencies")
+    axios
+      .post("http://localhost:5000/analyze/dependencies", { prompt: dependencyPrompt })
       .then((response) => setDependencyResult(response.data))
       .catch((error) => console.error("Dependency Analysis Error:", error));
   };
 
   const handlePlanClick = () => {
-    axios.get("http://localhost:5000/generate-plan")
+    axios
+      .post("http://localhost:5000/generate-plan", { prompt: migrationPrompt })
       .then((response) => setPlanResult(response.data))
       .catch((error) => console.error("Plan Generation Error:", error));
   };
@@ -69,38 +78,110 @@ function App() {
         </div>
       )}
 
-      {/* Analysis Buttons */}
+      {/* Lease Agent Section */}
       <div style={{ marginTop: "30px" }}>
+        <h2>Lease Agent Prompt</h2>
+        <textarea
+          rows={4}
+          cols={60}
+          value={leasePrompt}
+          onChange={(e) => setLeasePrompt(e.target.value)}
+          placeholder="Enter your lease analysis prompt here..."
+          style={{ display: "block", marginBottom: "10px" }}
+        />
         <button onClick={handleLeaseClick}>Analyze Lease</button>
-        <button onClick={handleDependencyClick} style={{ marginLeft: "10px" }}>
-          Analyze Dependencies
-        </button>
-        <button onClick={handlePlanClick} style={{ marginLeft: "10px" }}>
-          Generate Migration Plan
-        </button>
+
+        {leaseResult && (
+          <>
+            <h3 style={{ marginTop: "20px" }}>Lease Analysis Result:</h3>
+            <textarea
+              readOnly
+              value={leaseResult.response || JSON.stringify(leaseResult, null, 2)}
+              rows={10}
+              style={{
+                width: "100%",
+                whiteSpace: "pre-wrap",
+                overflowY: "auto",
+                padding: "1rem",
+                fontFamily: "monospace",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+                background: "#f9f9f9",
+              }}
+            />
+          </>
+        )}
       </div>
 
-      {/* Results */}
-      {leaseResult && (
-        <>
-          <h3>Lease Analysis Result:</h3>
-          <pre>{JSON.stringify(leaseResult, null, 2)}</pre>
-        </>
-      )}
+      {/* Dependency Agent Section */}
+      <div style={{ marginTop: "40px" }}>
+        <h2>Dependency Agent Prompt</h2>
+        <textarea
+          rows={4}
+          cols={60}
+          value={dependencyPrompt}
+          onChange={(e) => setDependencyPrompt(e.target.value)}
+          placeholder="Enter your dependency analysis prompt here..."
+          style={{ display: "block", marginBottom: "10px" }}
+        />
+        <button onClick={handleDependencyClick}>Analyze Dependencies</button>
 
-      {dependencyResult && (
-        <>
-          <h3>Dependency Analysis Result:</h3>
-          <pre>{JSON.stringify(dependencyResult, null, 2)}</pre>
-        </>
-      )}
+        {dependencyResult && (
+          <>
+            <h3 style={{ marginTop: "20px" }}>Dependency Analysis Result:</h3>
+            <textarea
+              readOnly
+              value={dependencyResult.response || JSON.stringify(dependencyResult, null, 2)}
+              rows={10}
+              style={{
+                width: "100%",
+                whiteSpace: "pre-wrap",
+                overflowY: "auto",
+                padding: "1rem",
+                fontFamily: "monospace",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+                background: "#f9f9f9",
+              }}
+            />
+          </>
+        )}
+      </div>
 
-      {planResult && (
-        <>
-          <h3>Migration Plan:</h3>
-          <pre>{JSON.stringify(planResult, null, 2)}</pre>
-        </>
-      )}
+      {/* Migration Plan Agent Section */}
+      <div style={{ marginTop: "40px" }}>
+        <h2>Migration Plan Prompt</h2>
+        <textarea
+          rows={4}
+          cols={60}
+          value={migrationPrompt}
+          onChange={(e) => setMigrationPrompt(e.target.value)}
+          placeholder="Enter your migration planning prompt here..."
+          style={{ display: "block", marginBottom: "10px" }}
+        />
+        <button onClick={handlePlanClick}>Generate Migration Plan</button>
+
+        {planResult && (
+          <>
+            <h3 style={{ marginTop: "20px" }}>Migration Plan Result:</h3>
+            <textarea
+              readOnly
+              value={planResult.response || JSON.stringify(planResult, null, 2)}
+              rows={10}
+              style={{
+                width: "100%",
+                whiteSpace: "pre-wrap",
+                overflowY: "auto",
+                padding: "1rem",
+                fontFamily: "monospace",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+                background: "#f9f9f9",
+              }}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 }

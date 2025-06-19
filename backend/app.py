@@ -7,6 +7,9 @@ import json
 
 from agents.agent_lease import analyze_lease
 from agents.agent_dependency import analyze_dependencies
+from agents.agent_Lease_call import run_lease_agent
+from agents.agent_dependency_call import run_dependency_agent
+from agents.agent_migrationplan_call import run_migrationplan_agent
 from agents.agent_migration import build_migration_plan
 
 from dotenv import load_dotenv
@@ -80,22 +83,32 @@ def upload_zip():
     return jsonify({"message": "Files processed successfully", "output_files": saved_outputs})
 
 
-@app.route('/analyze/lease', methods=['GET'])
+from flask import request
+
+@app.route('/analyze/lease', methods=['POST'])
 def lease_route():
-    results = analyze_lease()
-    return jsonify(results)
-
-
-@app.route('/analyze/dependencies', methods=['GET'])
-def dependency_route():
-    result = analyze_dependencies()
+    data = request.get_json()
+    prompt = data.get('prompt', 'Give Lease Informatin and ROI for each lease')  # Default fallback
+    result = run_lease_agent(prompt)
     return jsonify(result)
 
 
 
-@app.route('/generate-plan', methods=['GET'])
+@app.route('/analyze/dependencies', methods=['POST'])
+def analyze_dependencies():
+    data = request.get_json()
+    prompt = data.get('prompt', 'Please analyze the application dependencies.')
+    result = run_dependency_agent(prompt)
+    return jsonify(result)
+
+
+
+
+@app.route('/generate-plan', methods=['POST'])
 def generate_plan_route():
-    result = build_migration_plan()
+    data = request.get_json()
+    prompt = data.get('prompt', 'Please generate a cloud migration plan.')
+    result = run_migrationplan_agent(prompt)
     return jsonify(result)
 
 

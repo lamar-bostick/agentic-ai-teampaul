@@ -16,6 +16,7 @@ def extract_text_from_pdf(file_path):
     return text
 
 def analyze_lease():
+    #import pdb; pdb.set_trace()
     lease_data = []
 
     # Ensure the app_files directory exists
@@ -31,7 +32,7 @@ def analyze_lease():
             try:
                 headers = {
                     "Content-Type": "application/json",
-                    "api-key": AZURE_OPENAI_API_KEY
+                    "api-key": os.getenv("AZURE_OPENAI_API_KEY")
                 }
                 payload = {
                     "inputs": [
@@ -40,7 +41,7 @@ def analyze_lease():
                         }
                     ]
                 }
-                url = f"{AZURE_OPENAI_ENDPOINT}/openai/assistants/{AGENT_LEASE_ID}/invoke"
+                url = f"{AZURE_OPENAI_ENDPOINT}/openai/assistants/{AGENT_LEASE_ID}/invoke?api-version=2024-12-01-preview"
                 response = requests.post(url, headers=headers, json=payload)
 
                 if response.status_code == 200:

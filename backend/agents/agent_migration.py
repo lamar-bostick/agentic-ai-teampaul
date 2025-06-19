@@ -65,7 +65,7 @@ def build_migration_plan():
                 }
             ]
         }
-        url = f"{AZURE_OPENAI_ENDPOINT}/openai/assistants/{AGENT_MIGRATION_ID}/invoke"
+        url = f"{AZURE_OPENAI_ENDPOINT}/openai/assistants/{AGENT_MIGRATION_ID}/invoke?api-version=2024-12-01-preview"
         response = requests.post(url, headers=headers, json=payload)
 
         if response.status_code == 200:
