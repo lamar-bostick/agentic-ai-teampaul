@@ -1,29 +1,29 @@
 import React, { useState } from "react";
+import Navbar from "./components/Navbar";
 import axios from "axios";
+import FileSaver from "file-saver";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import "./App.css";
 
 function App() {
+  const [prompt, setPrompt] = useState("");
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [results, setResults] = useState("");
   const [zipFile, setZipFile] = useState(null);
-  const [uploadResult, setUploadResult] = useState(null);
-
-  const [leasePrompt, setLeasePrompt] = useState("");
-  const [leaseResult, setLeaseResult] = useState(null);
-
-  const [dependencyPrompt, setDependencyPrompt] = useState("");
-  const [dependencyResult, setDependencyResult] = useState(null);
-
-  const [migrationPrompt, setMigrationPrompt] = useState("");
-  const [planResult, setPlanResult] = useState(null);
 
   const handleFileChange = (e) => {
-    setZipFile(e.target.files[0]);
+    const file = e.target.files[0];
+    setZipFile(file);
+    if (file) {
+      setUploadMessage("File uploaded successfully!");
+    } else {
+      setUploadMessage("File upload failed.");
+    }
   };
 
-  const handleUpload = async () => {
-    if (!zipFile) {
-      alert("Please select a .zip file.");
-      return;
-    }
-
+  const uploadZipFile = async () => {
+    if (!zipFile) return;
     const formData = new FormData();
     formData.append("files", zipFile);
 
@@ -33,154 +33,148 @@ function App() {
           "Content-Type": "multipart/form-data",
         },
       });
-      setUploadResult(response.data);
+      setResults(JSON.stringify(response.data, null, 2));
     } catch (error) {
-      console.error("Upload Failed:", error);
-      alert("Error uploading file.");
+      setResults("Upload failed: " + error.message);
     }
   };
 
-  const handleLeaseClick = () => {
-    axios
-      .post("http://localhost:5000/analyze/lease", { prompt: leasePrompt })
-      .then((response) => setLeaseResult(response.data))
-      .catch((error) => console.error("Lease Analysis Error:", error));
+  const callAgent = async (endpoint) => {
+    try {
+      const response = await axios.post(`http://localhost:5000/${endpoint}`);
+      setResults(JSON.stringify(response.data, null, 2));
+    } catch (error) {
+      setResults(`Error contacting backend: ${error.message}`);
+    }
   };
 
-  const handleDependencyClick = () => {
-    axios
-      .post("http://localhost:5000/analyze/dependencies", { prompt: dependencyPrompt })
-      .then((response) => setDependencyResult(response.data))
-      .catch((error) => console.error("Dependency Analysis Error:", error));
+  const submitPrompt = async () => {
+    try {
+      const response = await axios.post("http://localhost:5000/analyze/prompt", {
+        prompt,
+      });
+      setResults(response.data.result);
+    } catch (error) {
+      setResults(`Error submitting prompt: ${error.message}`);
+    }
   };
 
-  const handlePlanClick = () => {
-    axios
-      .post("http://localhost:5000/generate-plan", { prompt: migrationPrompt })
-      .then((response) => setPlanResult(response.data))
-      .catch((error) => console.error("Plan Generation Error:", error));
+  const downloadResult = () => {
+    const blob = new Blob([results], { type: "text/plain;charset=utf-8" });
+    FileSaver.saveAs(blob, "results.txt");
+  };
+
+  const clearResults = () => {
+    setPrompt("");
+    setResults("");
+    setUploadMessage("");
+    setZipFile(null);
   };
 
   return (
-    <div className="App" style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <h1>SkyBridge Cloud Migration</h1>
+    <div>
+      <Navbar />
+      <div className="container mt-3">
+        <h1 className="text-center mb-1">SkyBridge</h1>
+        <p className="text-center mt-2 fw-bold">
+          Plan cloud migration for your company, with ease.
+        </p>
 
-      {/* Upload Section */}
-      <input type="file" accept=".zip" onChange={handleFileChange} />
-      <button onClick={handleUpload} style={{ marginLeft: "10px" }}>
-        Upload ZIP
-      </button>
-
-      {uploadResult && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Upload Result:</h3>
-          <pre>{JSON.stringify(uploadResult, null, 2)}</pre>
+        <div className="text-center my-3">
+          <p className="fs-6">Upload a zip file or individual files to get started.</p>
+          <div className="d-flex justify-content-center align-items-end gap-1">
+            <input
+              type="file"
+              className="form-control shadow-subtle"
+              onChange={handleFileChange}
+              multiple
+              style={{ maxWidth: "600px" }}
+            />
+            <button
+              className="btn btn-primary mt-0 mb-3"
+              onClick={uploadZipFile}
+              disabled={!zipFile}
+            >
+              Upload
+            </button>
+          </div>
+          {uploadMessage && (
+            <p
+              className={`mt-2 ${
+                uploadMessage.includes("success") ? "text-success" : "text-danger"
+              }`}
+            >
+              {uploadMessage}
+            </p>
+          )}
         </div>
-      )}
 
-      {/* Lease Agent Section */}
-      <div style={{ marginTop: "30px" }}>
-        <h2>Lease Agent Prompt</h2>
-        <textarea
-          rows={4}
-          cols={60}
-          value={leasePrompt}
-          onChange={(e) => setLeasePrompt(e.target.value)}
-          placeholder="Enter your lease analysis prompt here..."
-          style={{ display: "block", marginBottom: "10px" }}
-        />
-        <button onClick={handleLeaseClick}>Analyze Lease</button>
+        <div className="text-center my-4">
+          <p><strong>Try One of These Functions:</strong></p>
+          <div className="d-flex justify-content-center flex-wrap gap-1">
+            <button
+              className="btn btn-outline-primary custom shadow-subtle"
+              onClick={() => callAgent("generate-plan")}
+            >
+              Build a Cloud Migration Plan
+            </button>
+            <button
+              className="btn btn-outline-primary custom shadow-subtle"
+              onClick={() => callAgent("analyze/dependencies")}
+            >
+              Analyze Application Dependencies
+            </button>
+            <button
+              className="btn btn-outline-primary custom shadow-subtle"
+              onClick={() => callAgent("analyze/lease")}
+            >
+              Analyze Lease Information
+            </button>
+          </div>
+        </div>
 
-        {leaseResult && (
-          <>
-            <h3 style={{ marginTop: "20px" }}>Lease Analysis Result:</h3>
-            <textarea
-              readOnly
-              value={leaseResult.response || JSON.stringify(leaseResult, null, 2)}
-              rows={10}
-              style={{
-                width: "100%",
-                whiteSpace: "pre-wrap",
-                overflowY: "auto",
-                padding: "1rem",
-                fontFamily: "monospace",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                background: "#f9f9f9",
-              }}
-            />
-          </>
-        )}
-      </div>
+        <div className="my-4">
+          <p><strong>Or, Ask A Question About Your Data:</strong></p>
+          <textarea
+            className="form-control shadow-subtle"
+            rows="3"
+            placeholder="Create a 3 year migration plan for the following data set..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+          />
+          <div className="d-flex justify-content-end mt-2">
+            <button className="btn btn-outline-secondary me-2" onClick={clearResults}>
+              Clear
+            </button>
+            <button className="btn btn-primary" onClick={submitPrompt}>
+              Submit Prompt
+            </button>
+          </div>
+        </div>
 
-      {/* Dependency Agent Section */}
-      <div style={{ marginTop: "40px" }}>
-        <h2>Dependency Agent Prompt</h2>
-        <textarea
-          rows={4}
-          cols={60}
-          value={dependencyPrompt}
-          onChange={(e) => setDependencyPrompt(e.target.value)}
-          placeholder="Enter your dependency analysis prompt here..."
-          style={{ display: "block", marginBottom: "10px" }}
-        />
-        <button onClick={handleDependencyClick}>Analyze Dependencies</button>
-
-        {dependencyResult && (
-          <>
-            <h3 style={{ marginTop: "20px" }}>Dependency Analysis Result:</h3>
-            <textarea
-              readOnly
-              value={dependencyResult.response || JSON.stringify(dependencyResult, null, 2)}
-              rows={10}
-              style={{
-                width: "100%",
-                whiteSpace: "pre-wrap",
-                overflowY: "auto",
-                padding: "1rem",
-                fontFamily: "monospace",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                background: "#f9f9f9",
-              }}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Migration Plan Agent Section */}
-      <div style={{ marginTop: "40px" }}>
-        <h2>Migration Plan Prompt</h2>
-        <textarea
-          rows={4}
-          cols={60}
-          value={migrationPrompt}
-          onChange={(e) => setMigrationPrompt(e.target.value)}
-          placeholder="Enter your migration planning prompt here..."
-          style={{ display: "block", marginBottom: "10px" }}
-        />
-        <button onClick={handlePlanClick}>Generate Migration Plan</button>
-
-        {planResult && (
-          <>
-            <h3 style={{ marginTop: "20px" }}>Migration Plan Result:</h3>
-            <textarea
-              readOnly
-              value={planResult.response || JSON.stringify(planResult, null, 2)}
-              rows={10}
-              style={{
-                width: "100%",
-                whiteSpace: "pre-wrap",
-                overflowY: "auto",
-                padding: "1rem",
-                fontFamily: "monospace",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                background: "#f9f9f9",
-              }}
-            />
-          </>
-        )}
+        <div className="card mt-4 shadow-subtle">
+          <div className="card-header d-flex justify-content-between align-items-center bg-light">
+            <strong>Results</strong>
+            <div>
+              <button
+                className="btn btn-outline-secondary btn-sm me-2"
+                onClick={downloadResult}
+                disabled={!results}
+              >
+                <i className="bi bi-download me-1"></i> Download
+              </button>
+              <button
+                className="btn btn-outline-danger btn-sm"
+                onClick={clearResults}
+              >
+                <i className="bi bi-x-circle me-1"></i> Clear Window
+              </button>
+            </div>
+          </div>
+          <div className="card-body" style={{ maxHeight: "1200px", overflowY: "auto" }}>
+            {results || <p className="text-muted fs-6">Results text or files go here.</p>}
+          </div>
+        </div>
       </div>
     </div>
   );
