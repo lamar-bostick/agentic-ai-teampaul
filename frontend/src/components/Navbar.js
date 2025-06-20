@@ -2,7 +2,7 @@ import React from "react";
 
 function Navbar() {
   return (
-    <nav className="navbar navbar-expand-lg" style={{ backgroundColor: "#AB84FF" }}>
+    <nav className="navbar navbar-expand-lg" style={{ backgroundColor: "#6c63ff" }}>
       <div className="container-fluid">
         <a className="navbar-brand text-white fw-bold" href="#">
           SkyBridge

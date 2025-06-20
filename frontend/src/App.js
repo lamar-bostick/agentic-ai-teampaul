@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import Navbar from "./components/Navbar";
 import axios from "axios";
 import FileSaver from "file-saver";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import "./App.css";
 
 function App() {
@@ -72,31 +74,35 @@ function App() {
   return (
     <div>
       <Navbar />
-      <div className="container mt-5">
-        <h2 className="text-center">SkyBridge</h2>
-        <p className="text-center">
+      <div className="container mt-3">
+        <h1 className="text-center mb-1">SkyBridge</h1>
+        <p className="text-center mt-2 fw-bold">
           Plan cloud migration for your company, with ease.
         </p>
 
-        <div className="text-center my-4">
-          <p>Upload a zip file or individual files to get started.</p>
-          <input
-            type="file"
-            className="form-control"
-            onChange={handleFileChange}
-            multiple
-          />
-          <button
-            className="btn btn-success mt-2"
-            onClick={uploadZipFile}
-            disabled={!zipFile}
-          >
-            Upload
-          </button>
+        <div className="text-center my-3">
+          <p className="fs-6">Upload a zip file or individual files to get started.</p>
+          <div className="d-flex justify-content-center align-items-end gap-1">
+            <input
+              type="file"
+              className="form-control shadow-subtle"
+              onChange={handleFileChange}
+              multiple
+              style={{ maxWidth: "600px" }}
+            />
+            <button
+              className="btn btn-primary mt-0 mb-3"
+              onClick={uploadZipFile}
+              disabled={!zipFile}
+            >
+              Upload
+            </button>
+          </div>
           {uploadMessage && (
             <p
-              className={`mt-2 text-$
-                {uploadMessage.includes("success") ? "success" : "danger"}`}
+              className={`mt-2 ${
+                uploadMessage.includes("success") ? "text-success" : "text-danger"
+              }`}
             >
               {uploadMessage}
             </p>
@@ -105,37 +111,39 @@ function App() {
 
         <div className="text-center my-4">
           <p><strong>Try One of These Functions:</strong></p>
-          <button
-            className="btn btn-outline-primary custom me-2 mb-2"
-            onClick={() => callAgent("generate-plan")}
-          >
-            Build a Cloud Migration Plan
-          </button>
-          <button
-            className="btn btn-outline-primary custom me-2 mb-2"
-            onClick={() => callAgent("analyze/dependencies")}
-          >
-            Analyze Application Dependencies
-          </button>
-          <button
-            className="btn btn-outline-primary custom mb-2"
-            onClick={() => callAgent("analyze/lease")}
-          >
-            Analyze Lease Information
-          </button>
+          <div className="d-flex justify-content-center flex-wrap gap-1">
+            <button
+              className="btn btn-outline-primary custom shadow-subtle"
+              onClick={() => callAgent("generate-plan")}
+            >
+              Build a Cloud Migration Plan
+            </button>
+            <button
+              className="btn btn-outline-primary custom shadow-subtle"
+              onClick={() => callAgent("analyze/dependencies")}
+            >
+              Analyze Application Dependencies
+            </button>
+            <button
+              className="btn btn-outline-primary custom shadow-subtle"
+              onClick={() => callAgent("analyze/lease")}
+            >
+              Analyze Lease Information
+            </button>
+          </div>
         </div>
 
         <div className="my-4">
           <p><strong>Or, Ask A Question About Your Data:</strong></p>
           <textarea
-            className="form-control"
+            className="form-control shadow-subtle"
             rows="3"
             placeholder="Create a 3 year migration plan for the following data set..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
           />
           <div className="d-flex justify-content-end mt-2">
-            <button className="btn btn-secondary me-2" onClick={clearResults}>
+            <button className="btn btn-outline-secondary me-2" onClick={clearResults}>
               Clear
             </button>
             <button className="btn btn-primary" onClick={submitPrompt}>
@@ -144,8 +152,8 @@ function App() {
           </div>
         </div>
 
-        <div className="card mt-4">
-          <div className="card-header d-flex justify-content-between align-items-center">
+        <div className="card mt-4 shadow-subtle">
+          <div className="card-header d-flex justify-content-between align-items-center bg-light">
             <strong>Results</strong>
             <div>
               <button
@@ -153,18 +161,18 @@ function App() {
                 onClick={downloadResult}
                 disabled={!results}
               >
-                Download
+                <i className="bi bi-download me-1"></i> Download
               </button>
               <button
                 className="btn btn-outline-danger btn-sm"
                 onClick={clearResults}
               >
-                Close Window
+                <i className="bi bi-x-circle me-1"></i> Clear Window
               </button>
             </div>
           </div>
-          <div className="card-body" style={{ maxHeight: "300px", overflowY: "auto" }}>
-            {results || <p className="text-muted">Results text or files go here.</p>}
+          <div className="card-body" style={{ maxHeight: "1200px", overflowY: "auto" }}>
+            {results || <p className="text-muted fs-6">Results text or files go here.</p>}
           </div>
         </div>
       </div>

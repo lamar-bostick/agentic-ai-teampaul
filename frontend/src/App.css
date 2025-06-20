@@ -1,5 +1,5 @@
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Segoe UI', sans-serif;
   background-color: #fff;
   margin: 0;
   padding: 0;
@@ -70,7 +70,18 @@ body {
 }
 .btn-primary {
   background-color: #6c63ff;
+  color: white;
   border: none;
+}
+
+.btn-primary:hover {
+   background-color: #5750D6 !important;
+  color: white !important;
+}
+
+.btn-primary:disabled {
+   background-color: #AB84FF !important;
+  color: white !important;
 }
 .btn-outline-primary {
   border-color: #6c63ff;
@@ -81,15 +92,32 @@ body {
   color: white;
 }
 
+/* Custom outline button style */
 .btn-outline-primary.custom {
-  border-color: #6c63ff;
-  color: #6c63ff;
-  background-color: white;
-  margin-right: 20px;
+  border-color: #6c63ff !important;
+  color: #6c63ff !important;
+  background-color: white !important;
+}
+
+/* On hover */
+.btn-outline-primary.custom:hover {
+  background-color: #6c63ff !important;
+  color: white !important;
+}
+
+.card-header {
+  background-color: #6c63ff; /* Replace with your preferred color */
+  color: #fff; /* Optional: text color for better contrast */
+}
+
+.shadow-subtle {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+}
+
+/* Ensure buttons keep spacing */
+.button-group .btn {
+  margin-right: 12px;
   margin-bottom: 10px;
 }
 
-.btn-outline-primary.custom:hover {
-  background-color: #6c63ff;
-  color: white;
-}
