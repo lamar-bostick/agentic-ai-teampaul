@@ -1,30 +1,27 @@
-<<<<<<< HEAD
 import React, { useState } from "react";
+import Navbar from "./components/Navbar";
 import axios from "axios";
+import FileSaver from "file-saver";
+import "./App.css";
 
 function App() {
+  const [prompt, setPrompt] = useState("");
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [results, setResults] = useState("");
   const [zipFile, setZipFile] = useState(null);
-  const [uploadResult, setUploadResult] = useState(null);
-
-  const [leasePrompt, setLeasePrompt] = useState("");
-  const [leaseResult, setLeaseResult] = useState(null);
-
-  const [dependencyPrompt, setDependencyPrompt] = useState("");
-  const [dependencyResult, setDependencyResult] = useState(null);
-
-  const [migrationPrompt, setMigrationPrompt] = useState("");
-  const [planResult, setPlanResult] = useState(null);
 
   const handleFileChange = (e) => {
-    setZipFile(e.target.files[0]);
+    const file = e.target.files[0];
+    setZipFile(file);
+    if (file) {
+      setUploadMessage("File uploaded successfully!");
+    } else {
+      setUploadMessage("File upload failed.");
+    }
   };
 
-  const handleUpload = async () => {
-    if (!zipFile) {
-      alert("Please select a .zip file.");
-      return;
-    }
-
+  const uploadZipFile = async () => {
+    if (!zipFile) return;
     const formData = new FormData();
     formData.append("files", zipFile);
 
@@ -34,267 +31,145 @@ function App() {
           "Content-Type": "multipart/form-data",
         },
       });
-      setUploadResult(response.data);
+      setResults(JSON.stringify(response.data, null, 2));
     } catch (error) {
-      console.error("Upload Failed:", error);
-      alert("Error uploading file.");
+      setResults("Upload failed: " + error.message);
     }
   };
 
-  const handleLeaseClick = () => {
-    axios
-      .post("http://localhost:5000/analyze/lease", { prompt: leasePrompt })
-      .then((response) => setLeaseResult(response.data))
-      .catch((error) => console.error("Lease Analysis Error:", error));
-  };
-
-  const handleDependencyClick = () => {
-    axios
-      .post("http://localhost:5000/analyze/dependencies", { prompt: dependencyPrompt })
-      .then((response) => setDependencyResult(response.data))
-      .catch((error) => console.error("Dependency Analysis Error:", error));
-  };
-
-  const handlePlanClick = () => {
-    axios
-      .post("http://localhost:5000/generate-plan", { prompt: migrationPrompt })
-      .then((response) => setPlanResult(response.data))
-      .catch((error) => console.error("Plan Generation Error:", error));
-  };
-
-  return (
-    <div className="App" style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <h1>SkyBridge Cloud Migration</h1>
-
-      {/* Upload Section */}
-      <input type="file" accept=".zip" onChange={handleFileChange} />
-      <button onClick={handleUpload} style={{ marginLeft: "10px" }}>
-        Upload ZIP
-      </button>
-
-      {uploadResult && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Upload Result:</h3>
-          <pre>{JSON.stringify(uploadResult, null, 2)}</pre>
-        </div>
-      )}
-
-      {/* Lease Agent Section */}
-      <div style={{ marginTop: "30px" }}>
-        <h2>Lease Agent Prompt</h2>
-        <textarea
-          rows={4}
-          cols={60}
-          value={leasePrompt}
-          onChange={(e) => setLeasePrompt(e.target.value)}
-          placeholder="Enter your lease analysis prompt here..."
-          style={{ display: "block", marginBottom: "10px" }}
-        />
-        <button onClick={handleLeaseClick}>Analyze Lease</button>
-
-        {leaseResult && (
-          <>
-            <h3 style={{ marginTop: "20px" }}>Lease Analysis Result:</h3>
-            <textarea
-              readOnly
-              value={leaseResult.response || JSON.stringify(leaseResult, null, 2)}
-              rows={10}
-              style={{
-                width: "100%",
-                whiteSpace: "pre-wrap",
-                overflowY: "auto",
-                padding: "1rem",
-                fontFamily: "monospace",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                background: "#f9f9f9",
-              }}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Dependency Agent Section */}
-      <div style={{ marginTop: "40px" }}>
-        <h2>Dependency Agent Prompt</h2>
-        <textarea
-          rows={4}
-          cols={60}
-          value={dependencyPrompt}
-          onChange={(e) => setDependencyPrompt(e.target.value)}
-          placeholder="Enter your dependency analysis prompt here..."
-          style={{ display: "block", marginBottom: "10px" }}
-        />
-        <button onClick={handleDependencyClick}>Analyze Dependencies</button>
-
-        {dependencyResult && (
-          <>
-            <h3 style={{ marginTop: "20px" }}>Dependency Analysis Result:</h3>
-            <textarea
-              readOnly
-              value={dependencyResult.response || JSON.stringify(dependencyResult, null, 2)}
-              rows={10}
-              style={{
-                width: "100%",
-                whiteSpace: "pre-wrap",
-                overflowY: "auto",
-                padding: "1rem",
-                fontFamily: "monospace",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                background: "#f9f9f9",
-              }}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Migration Plan Agent Section */}
-      <div style={{ marginTop: "40px" }}>
-        <h2>Migration Plan Prompt</h2>
-        <textarea
-          rows={4}
-          cols={60}
-          value={migrationPrompt}
-          onChange={(e) => setMigrationPrompt(e.target.value)}
-          placeholder="Enter your migration planning prompt here..."
-          style={{ display: "block", marginBottom: "10px" }}
-        />
-        <button onClick={handlePlanClick}>Generate Migration Plan</button>
-
-        {planResult && (
-          <>
-            <h3 style={{ marginTop: "20px" }}>Migration Plan Result:</h3>
-            <textarea
-              readOnly
-              value={planResult.response || JSON.stringify(planResult, null, 2)}
-              rows={10}
-              style={{
-                width: "100%",
-                whiteSpace: "pre-wrap",
-                overflowY: "auto",
-                padding: "1rem",
-                fontFamily: "monospace",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                background: "#f9f9f9",
-              }}
-            />
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default App;
-=======
-import React, { useState } from "react";
-import axios from "axios";
-
-function App() {
-  const [zipFile, setZipFile] = useState(null);
-  const [uploadResult, setUploadResult] = useState(null);
-  const [leaseResult, setLeaseResult] = useState(null);
-  const [dependencyResult, setDependencyResult] = useState(null);
-  const [planResult, setPlanResult] = useState(null);
-
-  const handleFileChange = (e) => {
-    setZipFile(e.target.files[0]);
-  };
-
-  const handleUpload = async () => {
-    if (!zipFile) {
-      alert("Please select a .zip file.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("files", zipFile);
-
+  const callAgent = async (endpoint) => {
     try {
-      const response = await axios.post("http://localhost:5000/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      setUploadResult(response.data);
+      const response = await axios.post(`http://localhost:5000/${endpoint}`);
+      setResults(JSON.stringify(response.data, null, 2));
     } catch (error) {
-      console.error("Upload Failed:", error);
-      alert("Error uploading file.");
+      setResults(`Error contacting backend: ${error.message}`);
     }
   };
 
-  const handleLeaseClick = () => {
-    axios.get("http://localhost:5000/analyze/lease")
-      .then((response) => setLeaseResult(response.data))
-      .catch((error) => console.error("Lease Analysis Error:", error));
+  const submitPrompt = async () => {
+    try {
+      const response = await axios.post("http://localhost:5000/analyze/prompt", {
+        prompt,
+      });
+      setResults(response.data.result);
+    } catch (error) {
+      setResults(`Error submitting prompt: ${error.message}`);
+    }
   };
 
-  const handleDependencyClick = () => {
-    axios.get("http://localhost:5000/analyze/dependencies")
-      .then((response) => setDependencyResult(response.data))
-      .catch((error) => console.error("Dependency Analysis Error:", error));
+  const downloadResult = () => {
+    const blob = new Blob([results], { type: "text/plain;charset=utf-8" });
+    FileSaver.saveAs(blob, "results.txt");
   };
 
-  const handlePlanClick = () => {
-    axios.get("http://localhost:5000/generate-plan")
-      .then((response) => setPlanResult(response.data))
-      .catch((error) => console.error("Plan Generation Error:", error));
+  const clearResults = () => {
+    setPrompt("");
+    setResults("");
+    setUploadMessage("");
+    setZipFile(null);
   };
 
   return (
-    <div className="App" style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <h1>SkyBridge Cloud Migration</h1>
+    <div>
+      <Navbar />
+      <div className="container mt-5">
+        <h2 className="text-center">SkyBridge</h2>
+        <p className="text-center">
+          Plan cloud migration for your company, with ease.
+        </p>
 
-      {/* Upload Section */}
-      <input type="file" accept=".zip" onChange={handleFileChange} />
-      <button onClick={handleUpload} style={{ marginLeft: "10px" }}>
-        Upload ZIP
-      </button>
-
-      {uploadResult && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Upload Result:</h3>
-          <pre>{JSON.stringify(uploadResult, null, 2)}</pre>
+        <div className="text-center my-4">
+          <p>Upload a zip file or individual files to get started.</p>
+          <input
+            type="file"
+            className="form-control"
+            onChange={handleFileChange}
+            multiple
+          />
+          <button
+            className="btn btn-success mt-2"
+            onClick={uploadZipFile}
+            disabled={!zipFile}
+          >
+            Upload
+          </button>
+          {uploadMessage && (
+            <p
+              className={`mt-2 text-$
+                {uploadMessage.includes("success") ? "success" : "danger"}`}
+            >
+              {uploadMessage}
+            </p>
+          )}
         </div>
-      )}
 
-      {/* Analysis Buttons */}
-      <div style={{ marginTop: "30px" }}>
-        <button onClick={handleLeaseClick}>Analyze Lease</button>
-        <button onClick={handleDependencyClick} style={{ marginLeft: "10px" }}>
-          Analyze Dependencies
-        </button>
-        <button onClick={handlePlanClick} style={{ marginLeft: "10px" }}>
-          Generate Migration Plan
-        </button>
+        <div className="text-center my-4">
+          <p><strong>Try One of These Functions:</strong></p>
+          <button
+            className="btn btn-outline-primary custom me-2 mb-2"
+            onClick={() => callAgent("generate-plan")}
+          >
+            Build a Cloud Migration Plan
+          </button>
+          <button
+            className="btn btn-outline-primary custom me-2 mb-2"
+            onClick={() => callAgent("analyze/dependencies")}
+          >
+            Analyze Application Dependencies
+          </button>
+          <button
+            className="btn btn-outline-primary custom mb-2"
+            onClick={() => callAgent("analyze/lease")}
+          >
+            Analyze Lease Information
+          </button>
+        </div>
+
+        <div className="my-4">
+          <p><strong>Or, Ask A Question About Your Data:</strong></p>
+          <textarea
+            className="form-control"
+            rows="3"
+            placeholder="Create a 3 year migration plan for the following data set..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+          />
+          <div className="d-flex justify-content-end mt-2">
+            <button className="btn btn-secondary me-2" onClick={clearResults}>
+              Clear
+            </button>
+            <button className="btn btn-primary" onClick={submitPrompt}>
+              Submit Prompt
+            </button>
+          </div>
+        </div>
+
+        <div className="card mt-4">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <strong>Results</strong>
+            <div>
+              <button
+                className="btn btn-outline-secondary btn-sm me-2"
+                onClick={downloadResult}
+                disabled={!results}
+              >
+                Download
+              </button>
+              <button
+                className="btn btn-outline-danger btn-sm"
+                onClick={clearResults}
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+          <div className="card-body" style={{ maxHeight: "300px", overflowY: "auto" }}>
+            {results || <p className="text-muted">Results text or files go here.</p>}
+          </div>
+        </div>
       </div>
-
-      {/* Results */}
-      {leaseResult && (
-        <>
-          <h3>Lease Analysis Result:</h3>
-          <pre>{JSON.stringify(leaseResult, null, 2)}</pre>
-        </>
-      )}
-
-      {dependencyResult && (
-        <>
-          <h3>Dependency Analysis Result:</h3>
-          <pre>{JSON.stringify(dependencyResult, null, 2)}</pre>
-        </>
-      )}
-
-      {planResult && (
-        <>
-          <h3>Migration Plan:</h3>
-          <pre>{JSON.stringify(planResult, null, 2)}</pre>
-        </>
-      )}
     </div>
   );
 }
 
 export default App;
->>>>>>> 6d6b66f68944199b72bd0275267d3a568ef178ed
