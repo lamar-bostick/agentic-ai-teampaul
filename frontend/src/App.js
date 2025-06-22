@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import axios from "axios";
 import FileSaver from "file-saver";
+import Lottie from "lottie-react";
+import meditationAnimation from "./animations/meditation.json";
+import bearAnimation from "./animations/bear.json";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import "./App.css";
@@ -9,8 +12,14 @@ import "./App.css";
 function App() {
   const [prompt, setPrompt] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
-  const [results, setResults] = useState("");
+  const [results, setResults] = useState(null);
   const [zipFile, setZipFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Clear results when the page loads
+    setResults(null);
+  }, []);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -28,6 +37,7 @@ function App() {
     formData.append("files", zipFile);
 
     try {
+      setLoading(true);
       const response = await axios.post("http://localhost:5000/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -36,26 +46,34 @@ function App() {
       setResults(JSON.stringify(response.data, null, 2));
     } catch (error) {
       setResults("Upload failed: " + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const callAgent = async (endpoint) => {
     try {
+      setLoading(true);
       const response = await axios.post(`http://localhost:5000/${endpoint}`);
       setResults(JSON.stringify(response.data, null, 2));
     } catch (error) {
-      setResults(`Error contacting backend: ${error.message}`);
+      setResults(null);
+    } finally {
+      setLoading(false);
     }
   };
 
   const submitPrompt = async () => {
     try {
+      setLoading(true);
       const response = await axios.post("http://localhost:5000/analyze/prompt", {
         prompt,
       });
       setResults(response.data.result);
     } catch (error) {
-      setResults(`Error submitting prompt: ${error.message}`);
+      setResults(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,7 +84,7 @@ function App() {
 
   const clearResults = () => {
     setPrompt("");
-    setResults("");
+    setResults(null);
     setUploadMessage("");
     setZipFile(null);
   };
@@ -165,14 +183,28 @@ function App() {
               </button>
               <button
                 className="btn btn-outline-danger btn-sm"
-                onClick={clearResults}
+                onClick={() => setResults(null)}
               >
                 <i className="bi bi-x-circle me-1"></i> Clear Window
               </button>
             </div>
           </div>
           <div className="card-body" style={{ maxHeight: "1200px", overflowY: "auto" }}>
-            {results || <p className="text-muted fs-6">Results text or files go here.</p>}
+            {loading ? (
+              <div className="text-center">
+                <Lottie animationData={meditationAnimation} style={{ height: 200 }} />
+                <p className="mt-3 fs-6 fw-bold">
+                  Bridging the gap between you and your solution...
+                </p>
+              </div>
+            ) : results ? (
+              <pre style={{ whiteSpace: "pre-wrap" }}>{results}</pre>
+            ) : (
+              <div className="text-center">
+                <Lottie animationData={bearAnimation} style={{ height: 200 }} />
+                <p className="mt-3 fs-6 fw-bold text-muted">Looks like our agent is busy at the moment.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
