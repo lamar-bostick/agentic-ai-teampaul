@@ -51,10 +51,19 @@ function App() {
     }
   };
 
-  const callAgent = async (endpoint) => {
+  const callAgent = async (endpoint, promptText = null) => {
     try {
       setLoading(true);
-      const response = await axios.post(`http://localhost:5000/${endpoint}`);
+      let response;
+      if (promptText) {
+        response = await axios.post(
+          `http://localhost:5000/${endpoint}`,
+          { prompt: promptText },
+          { headers: { "Content-Type": "application/json" } }
+        );
+      } else {
+        response = await axios.post(`http://localhost:5000/${endpoint}`);
+      }
       setResults(JSON.stringify(response.data, null, 2));
     } catch (error) {
       setResults(null);
@@ -87,6 +96,21 @@ function App() {
     setResults(null);
     setUploadMessage("");
     setZipFile(null);
+  };
+
+  const formatResponse = (results) => {
+    try {
+      const parsed = JSON.parse(results);
+      const text = parsed.response;
+
+      return text
+        .replace(/\n###\s*/g, "<h5 class='mt-3'>")
+        .replace(/\n\d+\.\s/g, "<br /><strong>•</strong> ")
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\n/g, "<br />");
+    } catch {
+      return results;
+    }
   };
 
   return (
@@ -144,7 +168,7 @@ function App() {
             </button>
             <button
               className="btn btn-outline-primary custom shadow-subtle"
-              onClick={() => callAgent("analyze/lease")}
+              onClick={() => callAgent("analyze/lease", "Please provide important lease information for all leases")}
             >
               Analyze Lease Information
             </button>
