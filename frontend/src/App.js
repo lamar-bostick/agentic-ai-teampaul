@@ -20,6 +20,21 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
+  const formatResponse = (results) => {
+    try {
+      const parsed = JSON.parse(results);
+      const text = parsed.response || results;
+
+      return text
+        .replace(/\n###\s*/g, "<h5 class='mt-3'>")
+        .replace(/\n\d+\.\s/g, "<br /><strong>•</strong> ")
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\n/g, "<br />");
+    } catch {
+      return results;
+    }
+  };
+
   useEffect(() => {
     setResults(null);
     setHasInteracted(false);
@@ -241,7 +256,7 @@ function App() {
                 </p>
               </div>
             ) : results ? (
-              <pre style={{ whiteSpace: "pre-wrap" }}>{results}</pre>
+              <div dangerouslySetInnerHTML={{ __html: formatResponse(results) }} />
             ) : hasInteracted ? (
               <div className="text-center">
                 <Lottie animationData={bearAnimation} style={{ height: 200 }} />

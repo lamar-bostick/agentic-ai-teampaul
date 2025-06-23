@@ -80,12 +80,8 @@ body {
 }
 
 .btn-primary:disabled {
-   background-color: #AB8FFF !important;
+   background-color: #AB84FF !important;
   color: white !important;
-}
-.btn-outline-primary:disabled{
-  border-color: #AB8FFF;
-  color: #AB8FFF;
 }
 .btn-outline-primary {
   border-color: #6c63ff;
@@ -113,10 +109,7 @@ body {
   background-color: #6c63ff; /* Replace with your preferred color */
   color: #fff; /* Optional: text color for better contrast */
 }
-.bg-light {
-  background-color: #DBD9FF;
-  color: #000;
-}
+
 .shadow-subtle {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   border-radius: 8px;

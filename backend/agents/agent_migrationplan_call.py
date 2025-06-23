@@ -25,13 +25,16 @@ def run_migrationplan_agent(user_prompt: str):
     if run.status == "failed":
         return {"error": "Run failed", "details": run.last_error}
 
-    messages = list(project.agents.messages.list(
+    messages = project.agents.messages.list(
         thread_id=thread.id,
         order=ListSortOrder.ASCENDING
-    ))
+    )
 
-    for message in reversed(messages):
+    assistant_responses = []
+    for message in messages:
         if message.role == "assistant" and message.text_messages:
-            return {"response": message.text_messages[-1].text.value}
+            for text_msg in message.text_messages:
+                assistant_responses.append(text_msg.text.value.strip())
 
-    return {"response": "No assistant reply found."}
+    combined_response = "\n\n".join(assistant_responses)
+    return {"response": combined_response if combined_response else "No assistant reply found."}
