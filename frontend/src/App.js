@@ -5,6 +5,9 @@ import FileSaver from "file-saver";
 import Lottie from "lottie-react";
 import meditationAnimation from "./animations/meditation.json";
 import bearAnimation from "./animations/bear.json";
+import cardAnim1 from "./animations/card1.json";
+import cardAnim2 from "./animations/card2.json";
+import cardAnim3 from "./animations/card3.json";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import "./App.css";
@@ -15,10 +18,11 @@ function App() {
   const [results, setResults] = useState(null);
   const [zipFile, setZipFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
-    // Clear results when the page loads
     setResults(null);
+    setHasInteracted(false);
   }, []);
 
   const handleFileChange = (e) => {
@@ -35,23 +39,24 @@ function App() {
     if (!zipFile) return;
     const formData = new FormData();
     formData.append("files", zipFile);
+    setHasInteracted(true);
 
     try {
       setLoading(true);
       const response = await axios.post("http://localhost:5000/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       setResults(JSON.stringify(response.data, null, 2));
     } catch (error) {
-      setResults("Upload failed: " + error.message);
+      setResults(null);
     } finally {
       setLoading(false);
     }
   };
 
   const callAgent = async (endpoint, promptText = null) => {
+    setHasInteracted(true);
+
     try {
       setLoading(true);
       let response;
@@ -73,6 +78,8 @@ function App() {
   };
 
   const submitPrompt = async () => {
+    setHasInteracted(true);
+
     try {
       setLoading(true);
       const response = await axios.post("http://localhost:5000/analyze/prompt", {
@@ -96,21 +103,7 @@ function App() {
     setResults(null);
     setUploadMessage("");
     setZipFile(null);
-  };
-
-  const formatResponse = (results) => {
-    try {
-      const parsed = JSON.parse(results);
-      const text = parsed.response;
-
-      return text
-        .replace(/\n###\s*/g, "<h5 class='mt-3'>")
-        .replace(/\n\d+\.\s/g, "<br /><strong>•</strong> ")
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\n/g, "<br />");
-    } catch {
-      return results;
-    }
+    setHasInteracted(false);
   };
 
   return (
@@ -121,6 +114,34 @@ function App() {
         <p className="text-center mt-2 fw-bold">
           Plan cloud migration for your company, with ease.
         </p>
+
+        {/* Cards Section */}
+        <div className="row my-5 justify-content-center text-center">
+          <div className="col-md-4">
+            <div className="card p-3 shadow-subtle">
+              <Lottie animationData={cardAnim1} style={{ height: 150 }} />
+              <p className="mt-3">Use AI agents to analyze your data infrastructure</p>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="card p-3 shadow-subtle">
+              <Lottie animationData={cardAnim2} style={{ height: 150 }} />
+              <p className="mt-3">Build custom cloud migration solutions</p>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="card p-3 shadow-subtle">
+              <Lottie animationData={cardAnim3} style={{ height: 150 }} />
+              <p className="mt-3">Analyze dependencies, evaluate financial benefits</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center mb-5">
+          <a href="/next-page" className="btn btn-primary btn-lg">
+            Get Started
+          </a>
+        </div>
 
         <div className="text-center my-3">
           <p className="fs-6">Upload a zip file or individual files to get started.</p>
@@ -207,7 +228,7 @@ function App() {
               </button>
               <button
                 className="btn btn-outline-danger btn-sm"
-                onClick={() => setResults(null)}
+                onClick={clearResults}
               >
                 <i className="bi bi-x-circle me-1"></i> Clear Window
               </button>
@@ -223,11 +244,13 @@ function App() {
               </div>
             ) : results ? (
               <pre style={{ whiteSpace: "pre-wrap" }}>{results}</pre>
-            ) : (
+            ) : hasInteracted ? (
               <div className="text-center">
                 <Lottie animationData={bearAnimation} style={{ height: 200 }} />
                 <p className="mt-3 fs-6 fw-bold text-muted">Looks like our agent is busy at the moment.</p>
               </div>
+            ) : (
+              <p className="text-muted text-center">No results yet. Try uploading data or selecting a function above.</p>
             )}
           </div>
         </div>
