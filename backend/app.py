@@ -16,6 +16,8 @@ from agents.agent_dependency_call import run_dependency_agent
 from agents.agent_migrationplan_call import run_migrationplan_agent
 from agents.agent_migration import build_migration_plan
 from agents.agent_chatbot import run_chatbot_agent
+from flask import send_from_directory
+
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -110,11 +112,14 @@ def lease_route():
     return jsonify(result)
 
 @app.route('/analyze/dependencies', methods=['POST'])
-def analyze_dependencies():
-    data = request.get_json(silent=True) or {}
-    prompt = data.get('prompt', 'Please provide a table of the dependencies and call out any circular dependencies.')
-    result = run_dependency_agent(prompt)
-    return jsonify(result)
+def analyze_dependencies_route():
+    try:
+        result = analyze_dependencies()  # from agent_dependency.py
+        return jsonify(result)
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/generate-plan', methods=['POST'])
 def generate_plan_route():
@@ -130,6 +135,11 @@ def analyze_custom_prompt():
     or (request.get_json(silent=True) or {}).get("prompt")
     or "What can you tell me about the uploaded data?"
 )
+
+@app.route('/files/<path:filename>')
+def serve_output_file(filename):
+    return send_from_directory(OUTPUT_FOLDER, filename)
+
 
     if not os.path.exists(SUMMARY_CACHE_FILE):
         return jsonify({"error": "No uploaded data found. Please upload a ZIP first."}), 400

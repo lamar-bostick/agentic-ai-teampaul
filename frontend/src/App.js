@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import axios from "axios";
@@ -19,6 +20,9 @@ function App() {
   const [zipFile, setZipFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [dependencyTable, setDependencyTable] = useState([]);
+  const [csvDownloadLink, setCsvDownloadLink] = useState("");
+  const [graphImageUrl, setGraphImageUrl] = useState("");
 
   const formatResponse = (results) => {
     try {
@@ -67,20 +71,25 @@ function App() {
 
   const callAgent = async (endpoint, promptText = null) => {
     setHasInteracted(true);
+    setLoading(true);
+    setResults(null);
+    setDependencyTable([]);
+    setCsvDownloadLink("");
+    setGraphImageUrl("");
 
     try {
-      setLoading(true);
-      let response;
-      if (promptText) {
-        response = await axios.post(
-          `http://localhost:5000/${endpoint}`,
-          { prompt: promptText },
-          { headers: { "Content-Type": "application/json" } }
-        );
+      const response = await axios.post(`http://localhost:5000/${endpoint}`, promptText ? { prompt: promptText } : {});
+      const data = response.data;
+
+      if (endpoint === "analyze/dependencies") {
+        if (data.dependencies && Array.isArray(data.dependencies)) {
+          setDependencyTable(data.dependencies);
+        }
+        if (data.csv_url) setCsvDownloadLink(data.csv_url);
+        if (data.graph_url) setGraphImageUrl(data.graph_url);
       } else {
-        response = await axios.post(`http://localhost:5000/${endpoint}`);
+        setResults(JSON.stringify(data, null, 2));
       }
-      setResults(JSON.stringify(response.data, null, 2));
     } catch {
       setResults(null);
     } finally {
@@ -93,9 +102,7 @@ function App() {
 
     try {
       setLoading(true);
-      const response = await axios.post("http://localhost:5000/analyze/prompt", {
-        prompt,
-      });
+      const response = await axios.post("http://localhost:5000/analyze/prompt", { prompt });
       setResults(response.data.result);
     } catch {
       setResults(null);
@@ -115,6 +122,9 @@ function App() {
     setUploadMessage("");
     setZipFile(null);
     setHasInteracted(false);
+    setDependencyTable([]);
+    setCsvDownloadLink("");
+    setGraphImageUrl("");
   };
 
   return (
@@ -122,11 +132,8 @@ function App() {
       <Navbar />
       <div className="container-lg mt-3 px-4">
         <h1 className="text-center mb-1">SkyBridge</h1>
-        <p className="text-center mt-2 fw-bold">
-         Making your journey to cloud services easier.
-        </p>
+        <p className="text-center mt-2 fw-bold">Making your journey to cloud services easier.</p>
 
-        {/* Cards Section */}
         <div className="row my-5 justify-content-center text-center">
           <div className="col-md-4">
             <div className="card p-3 shadow-subtle">
@@ -148,7 +155,6 @@ function App() {
           </div>
         </div>
 
-        {/* Get Started Section inside a Card */}
         <div className="card shadow-subtle mb-5">
           <div className="card-header">
             <h5 className="mb-0 text-center">Get Started</h5>
@@ -156,93 +162,40 @@ function App() {
           <div className="card-body">
             <p className="fs-6 text-center">Upload individual files, or multiple in a zip folder.</p>
             <div className="d-flex justify-content-center align-items-end gap-1">
-              <input
-                type="file"
-                className="form-control shadow-subtle"
-                onChange={handleFileChange}
-                multiple
-                style={{ maxWidth: "600px" }}
-              />
-              <button
-                className="btn btn-primary mt-0 mb-3"
-                onClick={uploadZipFile}
-                disabled={!zipFile}
-              >
-                Upload
-              </button>
+              <input type="file" className="form-control shadow-subtle" onChange={handleFileChange} multiple style={{ maxWidth: "600px" }} />
+              <button className="btn btn-primary mt-0 mb-3" onClick={uploadZipFile} disabled={!zipFile}>Upload</button>
             </div>
             {uploadMessage && (
-              <p
-                className={`mt-2 text-center fs-6 ${
-                  uploadMessage.includes("success") ? "text-success" : "text-danger"
-                }`}
-              >
+              <div className={`alert mt-3 ${uploadMessage.includes("success") ? "alert-success" : "alert-danger"}`} style={{ maxWidth: "620px", margin: "0 auto" }}>
                 {uploadMessage}
-              </p>
+              </div>
             )}
-
             <div className="text-center my-4">
               <p><strong>Choose a task, or ask your agents a question:</strong></p>
               <div className="d-flex justify-content-center flex-nowrap gap-1">
-                <button
-                  className="btn btn-outline-primary custom shadow-subtle"
-                  onClick={() => callAgent("generate-plan")}
-                >
-                  Build a Cloud Migration Plan
-                </button>
-                <button
-                  className="btn btn-outline-primary custom shadow-subtle"
-                  onClick={() => callAgent("analyze/dependencies")}
-                >
-                  Analyze Application Dependencies
-                </button>
-                <button
-                  className="btn btn-outline-primary custom shadow-subtle"
-                  onClick={() =>
-                    callAgent("analyze/lease", "Please provide important lease information for all leases")
-                  }
-                >
-                  Analyze Lease Information
-                </button>
+                <button className="btn btn-outline-primary custom shadow-subtle" onClick={() => callAgent("generate-plan")}>Build a Cloud Migration Plan</button>
+                <button className="btn btn-outline-primary custom shadow-subtle" onClick={() => callAgent("analyze/dependencies")}>Analyze Application Dependencies</button>
+                <button className="btn btn-outline-primary custom shadow-subtle" onClick={() => callAgent("analyze/lease", "Please provide important lease information for all leases")}>Analyze Lease Information</button>
               </div>
             </div>
-
             <div className="my-4">
-              <textarea
-                className="form-control shadow-subtle"
-                rows="3"
-                placeholder="Create a 3 year migration plan for the following data set..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              />
+              <textarea className="form-control shadow-subtle" rows="3" placeholder="Create a 3 year migration plan for the following data set..." value={prompt} onChange={(e) => setPrompt(e.target.value)} />
               <div className="d-flex justify-content-end mt-2">
-                <button className="btn btn-outline-primary me-2" onClick={clearResults}>
-                  Clear
-                </button>
-                <button className="btn btn-primary" onClick={submitPrompt}>
-                  Submit Prompt
-                </button>
+                <button className="btn btn-outline-primary me-2" onClick={clearResults}>Clear</button>
+                <button className="btn btn-primary" onClick={submitPrompt}>Submit Prompt</button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Results Section */}
         <div className="card mt-4 shadow-subtle">
-          <div className="card-header d-flex justify-content-between align-items-center bg-light">
+          <div className="card-header d-flex justify-content-between align-items-center bg-light text-black text-center">
             <strong>Results</strong>
             <div>
-              <button
-                className="btn btn-outline-primary btn-sm me-2"
-                onClick={downloadResult}
-                disabled={!results}
-              >
+              <button className="btn btn-outline-primary btn-sm me-2" onClick={downloadResult} disabled={!results}>
                 <i className="bi bi-download me-1"></i> Download
               </button>
-              <button
-                className="btn btn-outline-danger btn-sm"
-                onClick={clearResults}
-              >
+              <button className="btn btn-outline-danger btn-sm" onClick={clearResults}>
                 <i className="bi bi-x-circle me-1"></i> Clear Window
               </button>
             </div>
@@ -251,9 +204,7 @@ function App() {
             {loading ? (
               <div className="text-center">
                 <Lottie animationData={meditationAnimation} style={{ height: 200 }} />
-                <p className="mt-3 fs-6 fw-bold">
-                  Bridging the gap between you and your solution...
-                </p>
+                <p className="mt-3 fs-6 fw-bold">Bridging the gap between you and your solution...</p>
               </div>
             ) : results ? (
               <div dangerouslySetInnerHTML={{ __html: formatResponse(results) }} />
@@ -265,8 +216,48 @@ function App() {
             ) : (
               <p className="text-muted text-center">No results yet. Try uploading data or selecting a function above.</p>
             )}
+
+            {dependencyTable.length > 0 && (
+              <div className="mt-4">
+                <h5>Application Dependency Table</h5>
+                <div className="table-responsive">
+                  <table className="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Source</th>
+                        <th>Target</th>
+                        <th>Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dependencyTable.map((dep, idx) => (
+                        <tr key={idx}>
+                          <td>{dep.source}</td>
+                          <td>{dep.target}</td>
+                          <td>{dep.type}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {csvDownloadLink && (
+                  <a className="btn btn-outline-success me-3" href={csvDownloadLink} target="_blank" rel="noopener noreferrer">
+                    Download CSV
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
+        {graphImageUrl && (
+          <div className="card mt-4 shadow-subtle">
+            <div className="card-header bg-light text-center"><strong>Dependency Graph</strong></div>
+            <div className="card-body text-center">
+              <img src={graphImageUrl} alt="Dependency Graph" style={{ maxWidth: "100%" }} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
