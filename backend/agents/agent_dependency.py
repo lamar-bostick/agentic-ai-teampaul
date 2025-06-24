@@ -2,6 +2,11 @@ import os
 import json
 import networkx as nx
 import requests
+import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from datetime import datetime
 from config import AGENT_DEPENDENCY_ID, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, OUTPUT_FOLDER
 
 def load_json(filename):
@@ -21,12 +26,12 @@ def build_dependency_graph():
 
     # Add application nodes
     for app in applications:
-        app_id = app.get("application_id") or app.get("App_ID")  # fallback if format changed
+        app_id = app.get("application_id") or app.get("App_ID")  # fallback
         app_name = app.get("application_name") or app.get("App_Name", "Unnamed App")
         if app_id:
             G.add_node(app_id, label=app_name, type="application")
 
-    # Add dependency edges using the JSON keys you provided
+    # Add dependency edges
     for dep in dependencies:
         source = dep.get("App_ID")
         target = dep.get("Depends_On_App_ID")
@@ -53,6 +58,8 @@ def build_dependency_graph():
 
     return G
 
+def timestamp():
+    return datetime.now().strftime('%Y%m%d_%H%M%S')
 
 def analyze_dependencies():
     G = build_dependency_graph()
@@ -64,6 +71,41 @@ def analyze_dependencies():
         "dependencies": list(G.edges())
     }
 
+    # Filter for application-to-application dependencies
+    app_edges = [
+        (u, v, d)
+        for u, v, d in G.edges(data=True)
+        if d.get("type") == "app_dep"
+    ]
+
+    app_dep_df = pd.DataFrame([
+        {
+            "Source_App_ID": u,
+            "Target_App_ID": v,
+            "Dependency_Type": d.get("label", "depends_on")
+        }
+        for u, v, d in app_edges
+    ])
+
+    # Save CSV
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    csv_filename = f"dependencies_{timestamp()}.csv"
+    csv_path = os.path.join(OUTPUT_FOLDER, csv_filename)
+    app_dep_df.to_csv(csv_path, index=False)
+
+    # Create HTML table
+    table_html = app_dep_df.to_html(classes="table table-bordered", index=False)
+
+    # Generate and save dependency graph image
+    plt.figure(figsize=(10, 8))
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='gray', node_size=800, font_size=8)
+    graph_filename = f"dependencies_graph_{timestamp()}.png"
+    graph_path = os.path.join(OUTPUT_FOLDER, graph_filename)
+    plt.savefig(graph_path, bbox_inches='tight')
+    plt.close()
+
+    # Send summary to AI agent
     try:
         headers = {
             "Content-Type": "application/json",
@@ -82,16 +124,25 @@ def analyze_dependencies():
         if response.status_code == 200:
             return {
                 "agent_response": response.json(),
-                "graph_summary": summary
+                "graph_summary": summary,
+                "table_html": table_html,
+                "csv_path": f"/{csv_filename}",
+                "graph_path": f"/{graph_filename}"
             }
         else:
             return {
                 "error": f"Agent error: {response.status_code}",
-                "graph_summary": summary
+                "graph_summary": summary,
+                "table_html": table_html,
+                "csv_path": f"/{csv_filename}",
+                "graph_path": f"/{graph_filename}"
             }
 
     except Exception as e:
         return {
             "error": str(e),
-            "graph_summary": summary
+            "graph_summary": summary,
+            "table_html": table_html,
+            "csv_path": f"/{csv_filename}",
+            "graph_path": f"/{graph_filename}"
         }

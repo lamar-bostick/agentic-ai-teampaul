@@ -21,19 +21,25 @@ function App() {
   const [hasInteracted, setHasInteracted] = useState(false);
 
   const formatResponse = (results) => {
-    try {
-      const parsed = JSON.parse(results);
-      const text = parsed.response || results;
+  try {
+    const parsed = JSON.parse(results);
 
-      return text
-        .replace(/\n###\s*/g, "<h5 class='mt-3'>")
-        .replace(/\n\d+\.\s/g, "<br /><strong>•</strong> ")
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\n/g, "<br />");
-    } catch {
-      return results;
+    // ✅ Render HTML table if it's returned
+    if (parsed.html_table) {
+      return parsed.html_table;
     }
-  };
+
+    const text = parsed.response || results;
+
+    return text
+      .replace(/\n###\s*/g, "<h5 class='mt-3'>")
+      .replace(/\n\d+\.\s/g, "<br /><strong>•</strong> ")
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\n/g, "<br />");
+  } catch {
+    return results;
+  }
+};
 
   useEffect(() => {
     setResults(null);

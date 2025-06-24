@@ -114,6 +114,8 @@ def analyze_dependencies():
     data = request.get_json(silent=True) or {}
     prompt = data.get('prompt', 'Please provide a table of the dependencies and call out any circular dependencies.')
     result = run_dependency_agent(prompt)
+    if "html_table" in result:
+        return jsonify({"html_table": result["html_table"], "raw_text": result.get("raw_text", "")})
     return jsonify(result)
 
 @app.route('/generate-plan', methods=['POST'])
