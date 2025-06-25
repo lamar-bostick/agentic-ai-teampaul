@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import Navbar from "./components/Navbar";
 import axios from "axios";
 import FileSaver from "file-saver";
@@ -8,8 +10,8 @@ import bearAnimation from "./animations/bear.json";
 import cardAnim1 from "./animations/card1.json";
 import cardAnim2 from "./animations/card2.json";
 import cardAnim3 from "./animations/card3.json";
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 import "./App.css";
 
 function App() {
@@ -20,26 +22,19 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
+  // Simplified formatter returns type ('html' or 'md') and content string
   const formatResponse = (results) => {
-  try {
-    const parsed = JSON.parse(results);
-
-    // ✅ Render HTML table if it's returned
-    if (parsed.html_table) {
-      return parsed.html_table;
+    try {
+      const parsed = JSON.parse(results);
+      if (parsed.html_table) {
+        return { type: "html", content: parsed.html_table };
+      }
+      const markdown = parsed.response || results;
+      return { type: "md", content: markdown };
+    } catch {
+      return { type: "md", content: results };
     }
-
-    const text = parsed.response || results;
-
-    return text
-      .replace(/\n###\s*/g, "<h5 class='mt-3'>")
-      .replace(/\n\d+\.\s/g, "<br /><strong>•</strong> ")
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\n/g, "<br />");
-  } catch {
-    return results;
-  }
-};
+  };
 
   useEffect(() => {
     setResults(null);
@@ -57,7 +52,6 @@ function App() {
     const formData = new FormData();
     formData.append("files", zipFile);
     setHasInteracted(true);
-
     try {
       setLoading(true);
       const response = await axios.post("http://localhost:5000/upload", formData, {
@@ -73,7 +67,6 @@ function App() {
 
   const callAgent = async (endpoint, promptText = null) => {
     setHasInteracted(true);
-
     try {
       setLoading(true);
       let response;
@@ -84,9 +77,17 @@ function App() {
           { headers: { "Content-Type": "application/json" } }
         );
       } else {
-        response = await axios.post(`http://localhost:5000/${endpoint}`);
+        response = await axios.post(`http://localhost:5000/${endpoint}`, {}, {
+          headers: { "Content-Type": "application/json" },
+        });
       }
-      setResults(JSON.stringify(response.data, null, 2));
+      const contentType = response.headers["content-type"];
+      if (contentType && contentType.includes("text/html")) {
+        // If the agent returns raw HTML (rare), store directly
+        setResults(JSON.stringify({ html_table: response.data }, null, 2));
+      } else {
+        setResults(JSON.stringify(response.data, null, 2));
+      }
     } catch {
       setResults(null);
     } finally {
@@ -96,12 +97,9 @@ function App() {
 
   const submitPrompt = async () => {
     setHasInteracted(true);
-
     try {
       setLoading(true);
-      const response = await axios.post("http://localhost:5000/analyze/prompt", {
-        prompt,
-      });
+      const response = await axios.post("http://localhost:5000/analyze/prompt", { prompt });
       setResults(response.data.result);
     } catch {
       setResults(null);
@@ -123,13 +121,15 @@ function App() {
     setHasInteracted(false);
   };
 
-  return (
+  // Prepare formatted output once per render
+  const formatted = results ? formatResponse(results) : null;
+return (
     <div>
       <Navbar />
       <div className="container-lg mt-3 px-4">
         <h1 className="text-center mb-1">SkyBridge</h1>
         <p className="text-center mt-2 fw-bold">
-         Making your journey to cloud services easier.
+          Making your journey to cloud services easier.
         </p>
 
         {/* Cards Section */}
@@ -154,13 +154,15 @@ function App() {
           </div>
         </div>
 
-        {/* Get Started Section inside a Card */}
+        {/* Get Started Section */}
         <div className="card shadow-subtle mb-5">
           <div className="card-header">
             <h5 className="mb-0 text-center">Get Started</h5>
           </div>
           <div className="card-body">
-            <p className="fs-6 text-center">Upload individual files, or multiple in a zip folder.</p>
+            <p className="fs-6 text-center">
+              Upload individual files, or multiple in a zip folder.
+            </p>
             <div className="d-flex justify-content-center align-items-end gap-1">
               <input
                 type="file"
@@ -186,7 +188,6 @@ function App() {
                 {uploadMessage}
               </p>
             )}
-
             <div className="text-center my-4">
               <p><strong>Choose a task, or ask your agents a question:</strong></p>
               <div className="d-flex justify-content-center flex-nowrap gap-1">
@@ -204,15 +205,12 @@ function App() {
                 </button>
                 <button
                   className="btn btn-outline-primary custom shadow-subtle"
-                  onClick={() =>
-                    callAgent("analyze/lease", "Please provide important lease information for all leases")
-                  }
+                  onClick={() => callAgent("analyze/lease")}
                 >
                   Analyze Lease Information
                 </button>
               </div>
             </div>
-
             <div className="my-4">
               <textarea
                 className="form-control shadow-subtle"
@@ -262,14 +260,34 @@ function App() {
                 </p>
               </div>
             ) : results ? (
-              <div dangerouslySetInnerHTML={{ __html: formatResponse(results) }} />
+              formatted.type === "html" ? (
+                <div dangerouslySetInnerHTML={{ __html: formatted.content }} />
+              ) : (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    table: ({ node, ...props }) => (
+                      <table className="table table-striped" {...props} />
+                    ),
+                    thead: ({ node, ...props }) => (
+                      <thead className="table-dark" {...props} />
+                    ),
+                  }}
+                >
+                  {formatted.content}
+                </ReactMarkdown>
+              )
             ) : hasInteracted ? (
               <div className="text-center">
                 <Lottie animationData={bearAnimation} style={{ height: 200 }} />
-                <p className="mt-3 fs-6 fw-bold text-muted">Looks like our agent is busy at the moment.</p>
+                <p className="mt-3 fs-6 fw-bold text-muted">
+                  Looks like our agent is busy at the moment.
+                </p>
               </div>
             ) : (
-              <p className="text-muted text-center">No results yet. Try uploading data or selecting a function above.</p>
+              <p className="text-muted text-center">
+                No results yet. Try uploading data or selecting a function above.
+              </p>
             )}
           </div>
         </div>

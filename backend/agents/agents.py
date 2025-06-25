@@ -66,16 +66,55 @@ def run_agent_task(task):
         apps = load_json_file("applications.json")
 
         prompt = f"""
-        You're an expert in cloud migration strategy. Here is the data:
-        - Application Dependencies: {json.dumps(dependencies or {}, indent=2)}
-        - Server Info: {json.dumps(servers or {}, indent=2)}
-        - Lease Terms: {lease_text}
-        - Application Metadata: {json.dumps(apps or {}, indent=2)}
+You are a highly skilled cloud migration strategist. You will use the following structured data to build a professional-grade 3-year cloud migration plan:
 
-        Using this information, create a cost-efficient 3-phase cloud migration plan. Include which apps/services to move when, any risks, and recommend Kubernetes, serverless, or VM options where relevant.
+### DATA:
+- Application Dependencies: {json.dumps(dependencies or {}, indent=2)}
+- Server Info: {json.dumps(servers or {}, indent=2)}
+- Lease Terms: {lease_text}
+- Application Metadata: {json.dumps(apps or {}, indent=2)}
+
+### TASK:
+Using the data above, create a structured cloud migration plan that:
+1. Prioritizes **cost efficiency** and minimizes risk.
+2. Aligns with the following business goals:
+   - Reduce costs
+   - Enable scalability
+   - Improve customer satisfaction
+   - Foster innovation
+3. Includes specific **security measures** (encryption, access control, etc.).
+4. Describes **backup & recovery strategies** during the transition.
+5. Minimizes downtime during migration by staging deployments.
+6. Recommends appropriate technologies (e.g., Kubernetes, serverless, VMs).
+
+### FORMAT:
+Structure your response using these 3 sections:
+
+#### 1. Executive Summary
+- Brief overview of the plan and rationale.
+- Summary of cloud platform recommendation.
+
+#### 2. Migration Phases
+- Use a table to define each migration wave. Include:
+  - Wave Number
+  - Timeline
+  - Applications/Services
+  - Migration Method (lift & shift, re-platform, etc.)
+  - Recommended Cloud Option (Kubernetes, VM, etc.)
+  - Risks
+  - Risk Mitigation Strategy
+
+#### 3. Alignment with Business Goals
+- Explain **how** each element of the plan supports the business goals above.
+- Bullet points or short paragraphs are okay.
+
+Please return the response as clear markdown-formatted text or HTML.
         """
+
         return call_openai(prompt)
+
 
     # Default fallback: use freeform user prompt
     prompt = f"Answer this task or question about cloud migration: {task}"
     return call_openai(prompt)
+ 
